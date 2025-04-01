@@ -7,10 +7,8 @@ const server = net.createServer((socket) => {
   socket.on("close", () => {
     socket.end();
   });
-  socket.on("connect", () => {
-    console.log("we're here");
-    socket.write("HTTP/1.1 200 OK\r\n\r\n");
-  });
+  console.log("we're here");
+  socket.write("HTTP/1.1 200 OK\r\n\r\n");
 });
 
 server.listen(4221, "localhost");
