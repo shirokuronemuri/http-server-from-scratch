@@ -1,4 +1,6 @@
 import * as net from "node:net";
+import fs from "node:fs";
+import path from "node:path";
 
 type Request = {
   method: string;
@@ -35,7 +37,7 @@ const getRequestHandlers = new Map<string | RegExp, (socket: net.Socket, req: Re
     socket.write("HTTP/1.1 200 OK\r\n\r\n");
   }],
   [/^\/echo\/.+$/, (socket, req) => {
-    const echoedString = req.target.match(/^\/echo\/(.+)$/)![1];
+    const echoedString = req.target.split('/')[2];
     socket.write([
       "HTTP/1.1 200 OK",
       "Content-Type: text/plain",
@@ -52,6 +54,24 @@ const getRequestHandlers = new Map<string | RegExp, (socket: net.Socket, req: Re
       '',
       req.headers.get("User-Agent")
     ].join("\r\n"));
+  }],
+  [/^\/files\/.+$/, (socket, req) => {
+    const directory = process.argv[3];
+    const fileName = req.target.split('/')[2];
+    const filePath = path.join(directory, fileName);
+    if (fs.existsSync(filePath)) {
+      const fileContents = fs.readFileSync(filePath, { encoding: 'utf-8' });
+      socket.write([
+        "HTTP/1.1 200 OK",
+        "Content-Type: application/octet-stream",
+        `Content-Length: ${contentLength(fileContents)}`,
+        '',
+        fileContents
+      ].join('\r\n'));
+    }
+    else {
+      socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+    }
   }]
 ]);
 
