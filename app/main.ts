@@ -1,6 +1,7 @@
 import * as net from "node:net";
 import fs from "node:fs";
 import path from "node:path";
+import { gzipSync } from "node:zlib";
 
 type Request = {
   method: string;
@@ -10,7 +11,7 @@ type Request = {
   body: string;
 };
 
-const contentLength = (text: string): number => new Blob([text]).size;
+const contentLength = (content: string | Buffer): number => new Blob([content]).size;
 
 const parseRequest = (requestBuffer: Buffer): Request => {
   const requestData = requestBuffer.toString().split('\r\n');
@@ -33,6 +34,8 @@ const parseRequest = (requestBuffer: Buffer): Request => {
   // todo add error handling for incorrect requests
   // todo add header checks
   // todo add cookie support
+  // todo create httpserver class; request and response class; 
+  // todo abstract away the server logic with server.get & .post methods, send responses with chained res calls 
 };
 
 const requestHandlers = new Map<string, Map<string | RegExp, (socket: net.Socket, req: Request) => void>>();
@@ -44,15 +47,17 @@ requestHandlers.set('GET', new Map<string | RegExp, (socket: net.Socket, req: Re
   [/^\/echo\/.+$/, (socket, req) => {
     const echoedString = req.target.split('/')[2];
     const encodingHeader = req.headers.get('Accept-Encoding');
-
+    const usesGzip = encodingHeader && encodingHeader.includes('gzip');
+    const responseBody = usesGzip ? gzipSync(echoedString) : echoedString;
     socket.write([
       "HTTP/1.1 200 OK",
+      ...(usesGzip ? ['Content-Encoding: gzip'] : []),
       "Content-Type: text/plain",
-      `Content-Length: ${contentLength(echoedString)}`,
-      ...(encodingHeader && encodingHeader.includes('gzip') ? ['Content-Encoding: gzip'] : []),
+      `Content-Length: ${contentLength(responseBody)}`,
       "",
-      echoedString
+      ""
     ].join('\r\n'));
+    socket.write(responseBody);
   }],
   ['/user-agent', (socket, req) => {
     socket.write([
