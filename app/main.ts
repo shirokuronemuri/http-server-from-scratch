@@ -30,6 +30,9 @@ const parseRequest = (requestBuffer: Buffer): Request => {
   // todo create an easy way to make new endpoints
   // todo watch typescript enums are terrible by michigan typescript
   // todo add parameter parsing
+  // todo add error handling for incorrect requests
+  // todo add header checks
+  // todo add cookie support
 };
 
 const requestHandlers = new Map<string, Map<string | RegExp, (socket: net.Socket, req: Request) => void>>();
@@ -96,7 +99,7 @@ requestHandlers.set('POST', new Map<string | RegExp, (socket: net.Socket, req: R
 const server = net.createServer((socket) => {
   socket.on("data", (requestBuffer) => {
     const req = parseRequest(requestBuffer);
-    let noHandlerFound = true;
+    let handlerFound = true;
     const handlers = requestHandlers.get(req.method);
     if (!handlers) {
       socket.write("HTTP/1.1 501 Not Implemented\r\n\r\n");
@@ -104,17 +107,17 @@ const server = net.createServer((socket) => {
     else {
       for (const [target, handler] of handlers) {
         if (typeof target === 'string' && req.target === target) {
-          noHandlerFound = false;
+          handlerFound = true;
           handler(socket, req);
           break;
         }
         else if (target instanceof RegExp && target.test(req.target)) {
-          noHandlerFound = false;
+          handlerFound = true;
           handler(socket, req);
           break;
         }
       }
-      if (noHandlerFound) {
+      if (!handlerFound) {
         socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
       }
     }
