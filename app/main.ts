@@ -8,6 +8,8 @@ type Request = {
   body: string;
 };
 
+const contentLength = (text: string): number => new Blob([text]).size;
+
 const parseRequest = (requestBuffer: Buffer): Request => {
   const requestData = requestBuffer.toString().split('\r\n');
   const [method, target, version] = requestData[0].split(' ');
@@ -37,10 +39,19 @@ const getRequestHandlers = new Map<string | RegExp, (socket: net.Socket, req: Re
     socket.write([
       "HTTP/1.1 200 OK",
       "Content-Type: text/plain",
-      `Content-Length: ${new Blob([echoedString]).size}`,
+      `Content-Length: ${contentLength(echoedString)}`,
       "",
       echoedString
     ].join('\r\n'));
+  }],
+  ['/user-agent', (socket, req) => {
+    socket.write([
+      "HTTP/1.1 200 OK",
+      "Content-Type: text/plain",
+      `Content-Length: ${contentLength(req.headers.get("User-Agent") ?? "")}`,
+      '',
+      req.headers.get("User-Agent")
+    ].join("\r\n"));
   }]
 ]);
 
@@ -48,7 +59,6 @@ const getRequestHandlers = new Map<string | RegExp, (socket: net.Socket, req: Re
 const server = net.createServer((socket) => {
   socket.on("data", (requestBuffer) => {
     const req = parseRequest(requestBuffer);
-    console.log(req);
     let noHandlerFound = true;
     if (req.method === 'GET') {
       for (const [target, handler] of getRequestHandlers) {
@@ -71,7 +81,6 @@ const server = net.createServer((socket) => {
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
   });
-
   socket.on("close", () => {
     socket.end();
   });
