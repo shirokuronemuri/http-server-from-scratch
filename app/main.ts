@@ -43,10 +43,13 @@ requestHandlers.set('GET', new Map<string | RegExp, (socket: net.Socket, req: Re
   }],
   [/^\/echo\/.+$/, (socket, req) => {
     const echoedString = req.target.split('/')[2];
+    const encodingHeader = req.headers.get('Accept-Encoding');
+
     socket.write([
       "HTTP/1.1 200 OK",
       "Content-Type: text/plain",
       `Content-Length: ${contentLength(echoedString)}`,
+      ...(encodingHeader && encodingHeader.includes('gzip') ? ['Content-Encoding: gzip'] : []),
       "",
       echoedString
     ].join('\r\n'));
@@ -90,7 +93,7 @@ requestHandlers.set('POST', new Map<string | RegExp, (socket: net.Socket, req: R
     } catch (err) {
       console.error(err);
       socket.write("HTTP/1.1 500 Internal Server Error\r\n\r\n");
-      socket.end();
+      // socket.end();
     }
     socket.write("HTTP/1.1 201 Created\r\n\r\n");
   }]
@@ -99,7 +102,7 @@ requestHandlers.set('POST', new Map<string | RegExp, (socket: net.Socket, req: R
 const server = net.createServer((socket) => {
   socket.on("data", (requestBuffer) => {
     const req = parseRequest(requestBuffer);
-    let handlerFound = true;
+    let handlerFound = false;
     const handlers = requestHandlers.get(req.method);
     if (!handlers) {
       socket.write("HTTP/1.1 501 Not Implemented\r\n\r\n");
