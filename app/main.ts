@@ -32,7 +32,9 @@ const parseRequest = (requestBuffer: Buffer): Request => {
   // todo add parameter parsing
 };
 
-const getRequestHandlers = new Map<string | RegExp, (socket: net.Socket, req: Request) => void>([
+const requestHandlers = new Map<string, Map<string | RegExp, (socket: net.Socket, req: Request) => void>>();
+
+requestHandlers.set('GET', new Map<string | RegExp, (socket: net.Socket, req: Request) => void>([
   ['/', (socket) => {
     socket.write("HTTP/1.1 200 OK\r\n\r\n");
   }],
@@ -73,15 +75,34 @@ const getRequestHandlers = new Map<string | RegExp, (socket: net.Socket, req: Re
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
   }]
-]);
+]));
 
+requestHandlers.set('POST', new Map<string | RegExp, (socket: net.Socket, req: Request) => void>([
+  [/^\/files\/.+$/, (socket, req) => {
+    const directory = process.argv[3];
+    const fileName = req.target.split('/')[2];
+    const filePath = path.join(directory, fileName);
+    try {
+      fs.writeFileSync(filePath, req.body);
+    } catch (err) {
+      console.error(err);
+      socket.write("HTTP/1.1 500 Internal Server Error\r\n\r\n");
+      socket.end();
+    }
+    socket.write("HTTP/1.1 201 Created\r\n\r\n");
+  }]
+]));
 
 const server = net.createServer((socket) => {
   socket.on("data", (requestBuffer) => {
     const req = parseRequest(requestBuffer);
     let noHandlerFound = true;
-    if (req.method === 'GET') {
-      for (const [target, handler] of getRequestHandlers) {
+    const handlers = requestHandlers.get(req.method);
+    if (!handlers) {
+      socket.write("HTTP/1.1 501 Not Implemented\r\n\r\n");
+    }
+    else {
+      for (const [target, handler] of handlers) {
         if (typeof target === 'string' && req.target === target) {
           noHandlerFound = false;
           handler(socket, req);
@@ -96,9 +117,6 @@ const server = net.createServer((socket) => {
       if (noHandlerFound) {
         socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
       }
-    }
-    else {
-      socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
   });
   socket.on("close", () => {
