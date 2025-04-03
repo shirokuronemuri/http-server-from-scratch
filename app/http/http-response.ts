@@ -1,10 +1,6 @@
 import * as net from "node:net";
 import type { HttpResponseHeaderName, HttpResponseHeaderValueMap, HttpStatusCode, HttpVersion } from "./types";
 
-// type HttpHeaders = Map<
-//   HttpResponseHeaderName,
-//   HttpResponseHeaderValueMap[HttpResponseHeaderName & keyof HttpResponseHeaderValueMap]>;
-
 class HttpHeaders {
   #headers: { [key: string]: string; } = {};
 
@@ -14,6 +10,10 @@ class HttpHeaders {
 
   get<K extends keyof HttpResponseHeaderValueMap>(key: K): HttpResponseHeaderValueMap[K] | undefined {
     return this.#headers[key] as HttpResponseHeaderValueMap[K] | undefined;
+  }
+
+  getAll(): { [key: string]: string; } {
+    return { ...this.#headers };
   }
 }
 
