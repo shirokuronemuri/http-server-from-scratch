@@ -1,8 +1,8 @@
 import type { HttpMethod } from "./types";
 interface Request {
-  // todo: send 501 Not Supported if method is not in HttpMethod
   method: string;
   target: string;
+  params: { [key: string]: string; };
   version: string;
   headers: Map<string, string>;
   body: string;
@@ -27,6 +27,17 @@ export class HttpRequest {
     return this.#request.body;
   }
 
+  parseParams(target: string) {
+    const paramKeys = [...target.matchAll(/:(\w+)/g)].map((match) => match[1]);
+
+    const targetPattern = new RegExp(target.replace(/:(\w+)/g, "([^/]+)"));
+    const targetValueMatch = this.#request.target.match(targetPattern);
+    if (targetValueMatch) {
+      this.#request.params = Object.fromEntries(paramKeys.map((key, i) => [key, targetValueMatch[i + 1]]));
+    }
+
+  }
+
   constructor(requestBuffer: Buffer) {
     this.#request = parseRequest(requestBuffer);
   }
@@ -46,6 +57,7 @@ const parseRequest = (requestBuffer: Buffer): Request => {
     method,
     target,
     version,
+    params: {},
     headers,
     body
   };
