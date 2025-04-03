@@ -1,5 +1,5 @@
 export type HttpVersion = "HTTP/1.1";
-export type HttpMethod = 'get' | 'post';
+export type HttpMethod = 'GET' | 'POST';
 export const HttpStatusMessages = {
   200: 'OK',
   201: 'Created',

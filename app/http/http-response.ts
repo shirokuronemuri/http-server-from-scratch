@@ -1,5 +1,5 @@
 import * as net from "node:net";
-import type { HttpResponseHeaderName, HttpResponseHeaderValueMap, HttpStatusCode, HttpVersion } from "./types";
+import { HttpStatusMessages, type HttpResponseHeaderName, type HttpResponseHeaderValueMap, type HttpStatusCode, type HttpVersion } from "./types";
 
 class HttpHeaders {
   #headers: { [key: string]: string; } = {};
@@ -12,7 +12,7 @@ class HttpHeaders {
     return this.#headers[key] as HttpResponseHeaderValueMap[K] | undefined;
   }
 
-  getAll(): { [key: string]: string; } {
+  getAll(): { [key: string]: string | undefined; } {
     return { ...this.#headers };
   }
 }
@@ -55,5 +55,22 @@ export class HttpResponse {
   body(body: string | Buffer): this {
     this.#response.body = body;
     return this;
+  }
+
+  send() {
+    let headers = this.#response.headers.getAll();
+    let headerString = "";
+    for (let key in headers) {
+      headerString += `${key}: ${headers[key]}\r\n`;
+    }
+    this.#socket.write([
+      `${this.#response.version} ${this.#response.statusCode} ${HttpStatusMessages[this.#response.statusCode]}`,
+      headerString,
+      ""
+    ].join('\r\n'));
+    if (this.#response.body) {
+      this.#socket.write(this.#response.body);
+    }
+    this.#socket.end();
   }
 }
