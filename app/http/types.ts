@@ -20,11 +20,3 @@ export type HttpResponseHeaderValueMap = {
   ? string
   : (typeof HttpResponseHeaders)[K][number];
 };
-export interface RequestType<ParamType extends { [key: string]: string; }> {
-  method: string;
-  target: string;
-  params: ParamType;
-  version: string;
-  headers: Map<string, string>;
-  body: string;
-};

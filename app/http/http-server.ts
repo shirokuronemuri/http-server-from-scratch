@@ -20,6 +20,8 @@ export class HttpServer {
   start() {
     const server = net.createServer((socket) => {
       socket.on("data", (requestBuffer) => {
+        // todo: write type that extracts parameters from string
+        // todo: create a generic type for http request that allows showing param list based on the endpoint
         const req = new HttpRequest(requestBuffer);
         const res = new HttpResponse(socket);
 
