@@ -4,13 +4,13 @@ import fs from "node:fs";
 
 const server = new HttpServer('localhost', 4221);
 
-function delay(t: number) {
-  return new Promise(function (resolve) {
-    setTimeout(function () {
-      resolve(true);
-    }, t);
-  });
-}
+// todo: 
+// - create Router class for route separation (express-like)
+// - add argument parsing
+// - add better error handling
+// - add more method types
+// - add cookie support
+// - add custom middleware support
 
 server.get("/", (_req, res) => {
   res.status(200);
@@ -21,6 +21,12 @@ server.get("/echo/:str", (req, res) => {
     .status(200)
     .header("Content-Type", "text/plain")
     .body(req.param.str);
+  const encodingHeader = req.header('Accept-Encoding');
+  if (encodingHeader && encodingHeader.includes('gzip')) {
+    res
+      .header('Content-Encoding', "gzip")
+      .compress("gzip");
+  }
 });
 
 server.get("/user-agent", (req, res) => {
@@ -33,13 +39,12 @@ server.get("/user-agent", (req, res) => {
 server.get("/files/:filename", async (req, res) => {
   const folder = process.argv[process.argv.indexOf('--directory') + 1];
   const filePath = path.join(folder, req.param.filename);
-  // await delay(500);
-  if (fs.existsSync(filePath)) {
-    const fileContents = fs.readFileSync(filePath);
+  const file = Bun.file(filePath);
+  if (await file.exists()) {
     res
       .status(200)
       .header('Content-Type', 'application/octet-stream')
-      .body(fileContents);
+      .body(await file.text());
   }
   else {
     res.status(404);

@@ -14,6 +14,7 @@ const HttpResponseHeaders = {
   "Content-Length": [] as string[],
   "Content-Encoding": ['gzip'],
 } as const;
+export type CompressionType = typeof HttpResponseHeaders['Content-Encoding'][number];
 export type HttpResponseHeaderName = keyof typeof HttpResponseHeaders;
 export type HttpResponseHeaderValueMap = {
   [K in HttpResponseHeaderName]: K extends 'Content-Length'

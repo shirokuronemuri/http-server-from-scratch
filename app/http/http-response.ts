@@ -1,5 +1,6 @@
 import * as net from "node:net";
-import { HttpStatusMessages, type HttpResponseHeaderName, type HttpResponseHeaderValueMap, type HttpStatusCode, type HttpVersion } from "./types";
+import zlib from "node:zlib";
+import { HttpStatusMessages, type CompressionType, type HttpResponseHeaderName, type HttpResponseHeaderValueMap, type HttpStatusCode, type HttpVersion } from "./types";
 
 class HttpHeaders {
   #headers: { [key: string]: string; } = {};
@@ -55,6 +56,23 @@ export class HttpResponse {
   body(body: string | Buffer): this {
     this.#response.body = body;
     this.header('Content-Length', getContentLength(body).toString());
+    return this;
+  }
+
+  compress(type: CompressionType): this {
+    switch (type) {
+      case "gzip": {
+        if (this.#response.body) {
+          this.#response.body = zlib.gzipSync(this.#response.body);
+          this.header('Content-Length', getContentLength(this.#response.body).toString());
+        }
+        break;
+      }
+      default: {
+        throw new Error(`invalid compression type: ${type}`);
+      }
+    }
+
     return this;
   }
 

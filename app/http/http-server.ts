@@ -6,7 +6,7 @@ import { HttpResponse } from "./http-response";
 type Endpoint<Path extends string = string> = {
   method: HttpMethod;
   target: Path;
-  callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void;
+  callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void | Promise<void>;
 };
 
 export class HttpServer {
@@ -21,7 +21,7 @@ export class HttpServer {
 
   start() {
     const server = net.createServer((socket) => {
-      socket.on("data", (requestBuffer) => {
+      socket.on("data", async (requestBuffer) => {
         const parsedReq = HttpRequest.parseRequest(requestBuffer);
         const res = new HttpResponse(socket);
         let endpointMatched = false;
@@ -30,7 +30,7 @@ export class HttpServer {
             endpointMatched = true;
             const parsedParams = HttpRequest.parseParams(parsedReq.target, endpoint.target);
             const req = new HttpRequest(parsedReq, parsedParams);
-            endpoint.callback.call(this, req, res);
+            await endpoint.callback.call(this, req, res);
             res.send();
             break;
           }
