@@ -7,7 +7,17 @@ server.get("/", (_req, res) => {
 });
 
 server.get("/echo/:str", (req, res) => {
-  res.status(200).header("content-type", "text/plain").body(req.param.str);
+  res
+    .status(200)
+    .header("content-type", "text/plain")
+    .body(req.param.str);
+});
+
+server.get("/user-agent", (req, res) => {
+  res
+    .status(200)
+    .header("content-type", "text/plain")
+    .body(req.header("user-agent") ?? "");
 });
 
 server.start();
