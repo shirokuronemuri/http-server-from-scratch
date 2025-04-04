@@ -54,7 +54,7 @@ export class HttpResponse {
 
   body(body: string | Buffer): this {
     this.#response.body = body;
-    this.header('content-length', getContentLength(body).toString());
+    this.header('Content-Length', getContentLength(body).toString());
     return this;
   }
 

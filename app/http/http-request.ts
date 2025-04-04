@@ -48,7 +48,7 @@ export class HttpRequest<ParamType> {
     const body = requestData[requestData.length - 1];
     const headers = new Map<string, string>(requestData.slice(1, -2).map((header) => {
       const [key, value] = header.split(': ');
-      return [key.toLowerCase(), value];
+      return [key, value];
     }));
 
     return {

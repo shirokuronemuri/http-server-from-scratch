@@ -10,13 +10,13 @@ export const HttpStatusMessages = {
 export type HttpStatusCode = keyof typeof HttpStatusMessages;
 export type HttpStatusMessage = (typeof HttpStatusMessages)[HttpStatusCode];
 const HttpResponseHeaders = {
-  "content-type": ['application/octet-stream', 'text/plain'],
-  "content-length": [] as string[],
-  "content-encoding": ['gzip'],
+  "Content-Type": ['application/octet-stream', 'text/plain'],
+  "Content-Length": [] as string[],
+  "Content-Encoding": ['gzip'],
 } as const;
 export type HttpResponseHeaderName = keyof typeof HttpResponseHeaders;
 export type HttpResponseHeaderValueMap = {
-  [K in HttpResponseHeaderName]: K extends 'content-length'
+  [K in HttpResponseHeaderName]: K extends 'Content-Length'
   ? string
   : (typeof HttpResponseHeaders)[K][number];
 };
