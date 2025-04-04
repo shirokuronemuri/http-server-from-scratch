@@ -33,7 +33,7 @@ server.get("/user-agent", (req, res) => {
 server.get("/files/:filename", async (req, res) => {
   const folder = process.argv[process.argv.indexOf('--directory') + 1];
   const filePath = path.join(folder, req.param.filename);
-  await delay(500);
+  // await delay(500);
   if (fs.existsSync(filePath)) {
     const fileContents = fs.readFileSync(filePath);
     res
@@ -44,7 +44,13 @@ server.get("/files/:filename", async (req, res) => {
   else {
     res.status(404);
   }
+});
 
+server.post("/files/:filename", (req, res) => {
+  const folder = process.argv[process.argv.indexOf('--directory') + 1];
+  const filePath = path.join(folder, req.param.filename);
+  fs.writeFileSync(filePath, req.body);
+  res.status(201);
 });
 
 server.start();
