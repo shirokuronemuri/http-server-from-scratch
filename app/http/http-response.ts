@@ -54,6 +54,7 @@ export class HttpResponse {
 
   body(body: string | Buffer): this {
     this.#response.body = body;
+    this.header('content-length', getContentLength(body).toString());
     return this;
   }
 
@@ -73,4 +74,9 @@ export class HttpResponse {
     }
     this.#socket.end();
   }
+
+}
+
+function getContentLength(data: string | Buffer): number {
+  return new Blob([data]).size;
 }

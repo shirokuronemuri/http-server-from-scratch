@@ -6,8 +6,8 @@ server.get("/", (_req, res) => {
   res.status(200);
 });
 
-server.post("/create/", (_req, res) => {
-  res.status(201).header("content-type", "text/plain").body("awawa");
+server.get("/echo/:str", (req, res) => {
+  res.status(200).header("content-type", "text/plain").body(req.param.str);
 });
 
 server.start();

@@ -20,3 +20,16 @@ export type HttpResponseHeaderValueMap = {
   ? string
   : (typeof HttpResponseHeaders)[K][number];
 };
+export interface Request {
+  method: string;
+  target: string;
+  version: string;
+  headers: Map<string, string>;
+  body: string;
+};
+export type ParamObject<S extends String> =
+  S extends `${infer _Start}:${infer Param}/${infer Rest}`
+  ? { [K in Param | keyof ParamObject<`/${Rest}`>]: string }
+  : S extends `${infer Start}:${infer Param}`
+  ? { [K in Param]: string }
+  : {};

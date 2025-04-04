@@ -1,16 +1,18 @@
 import * as net from "net";
-import type { HttpMethod } from "./types";
+import type { HttpMethod, ParamObject } from "./types";
 import { HttpRequest } from "./http-request";
 import { HttpResponse } from "./http-response";
+
+type Endpoint<Path extends string = string> = {
+  method: HttpMethod;
+  target: Path;
+  callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void;
+};
 
 export class HttpServer {
   #port: number;
   #hostname: string;
-  #endpoints: {
-    method: HttpMethod;
-    target: string;
-    callback: (req: HttpRequest, res: HttpResponse) => void;
-  }[] = [];
+  #endpoints: Endpoint[] = [];
 
   constructor(hostname: string = 'localhost', port: number = 4221) {
     this.#port = port;
@@ -20,15 +22,14 @@ export class HttpServer {
   start() {
     const server = net.createServer((socket) => {
       socket.on("data", (requestBuffer) => {
-        // todo: write type that extracts parameters from string
-        // todo: create a generic type for http request that allows showing param list based on the endpoint
-        const req = new HttpRequest(requestBuffer);
+        const parsedReq = HttpRequest.parseRequest(requestBuffer);
         const res = new HttpResponse(socket);
-
         let endpointMatched = false;
         for (let endpoint of this.#endpoints) {
-          if (req.method === endpoint.method && req.target === endpoint.target) {
+          if (parsedReq.method === endpoint.method && isTargetMatch(parsedReq.target, endpoint.target)) {
             endpointMatched = true;
+            const parsedParams = HttpRequest.parseParams(parsedReq.target, endpoint.target);
+            const req = new HttpRequest(parsedReq, parsedParams);
             endpoint.callback.call(this, req, res);
             res.send();
             break;
@@ -46,11 +47,34 @@ export class HttpServer {
     server.listen(this.#port, this.#hostname);
   }
 
-  get(target: string, callback: (req: HttpRequest, res: HttpResponse) => void) {
-    this.#endpoints.push({ method: 'GET', target, callback });
+  get<Path extends string>(target: Path, callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void) {
+    const endpoint: Endpoint<Path> = {
+      method: 'GET',
+      target,
+      callback
+    };
+    this.#endpoints.push(endpoint);
   }
 
-  post(target: string, callback: (req: HttpRequest, res: HttpResponse) => void) {
-    this.#endpoints.push({ method: 'POST', target, callback });
+  post<Path extends string>(target: Path, callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void) {
+    const endpoint: Endpoint<Path> = {
+      method: 'POST',
+      target,
+      callback
+    };
+    this.#endpoints.push(endpoint);
   }
 }
+
+function isTargetMatch(requestTarget: string, endpointTarget: string) {
+  const targetPattern = new RegExp(`^${endpointTarget.replace(/:(\w+)/g, "([^/]+)")}$`);
+  return requestTarget.match(targetPattern);
+}
+
+interface RequestWithUnparsedParams {
+  method: string;
+  target: string;
+  version: string;
+  headers: Map<string, string>;
+  body: string;
+};

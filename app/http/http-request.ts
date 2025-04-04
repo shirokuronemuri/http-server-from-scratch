@@ -1,15 +1,14 @@
-import type { HttpMethod } from "./types";
-interface Request {
-  method: string;
-  target: string;
-  params: { [key: string]: string; };
-  version: string;
-  headers: Map<string, string>;
-  body: string;
-};
+import type { HttpMethod, ParamObject, Request } from "./types";
 
-export class HttpRequest {
+
+export class HttpRequest<ParamType> {
   #request: Request;
+  #params: ParamType;
+
+  constructor(request: Request, params: ParamType) {
+    this.#request = request;
+    this.#params = params;
+  }
 
   get method() {
     return this.#request.method;
@@ -26,39 +25,39 @@ export class HttpRequest {
   get body() {
     return this.#request.body;
   }
+  get param() {
+    return { ...this.#params };
+  }
 
-  parseParams(target: string) {
-    const paramKeys = [...target.matchAll(/:(\w+)/g)].map((match) => match[1]);
+  static parseParams<Path extends string>(requestTarget: string, endpointTarget: Path): ParamObject<Path> {
+    const paramKeys = [...endpointTarget.matchAll(/:(\w+)/g)].map((match) => match[1]);
 
-    const targetPattern = new RegExp(target.replace(/:(\w+)/g, "([^/]+)"));
-    const targetValueMatch = this.#request.target.match(targetPattern);
+    const targetPattern = new RegExp(`^${endpointTarget.replace(/:(\w+)/g, "([^/]+)")}$`);
+    const targetValueMatch = requestTarget.match(targetPattern);
     if (targetValueMatch) {
-      this.#request.params = Object.fromEntries(paramKeys.map((key, i) => [key, targetValueMatch[i + 1]]));
+      return Object.fromEntries(paramKeys.map((key, i) => [key, targetValueMatch[i + 1]])) as ParamObject<Path>;
     }
-
+    else {
+      return {} as ParamObject<Path>;
+    }
   }
 
-  constructor(requestBuffer: Buffer) {
-    this.#request = parseRequest(requestBuffer);
-  }
+  static parseRequest(requestBuffer: Buffer): Request {
+    const requestData = requestBuffer.toString().split('\r\n');
+    const [method, target, version] = requestData[0].split(' ');
+    const body = requestData[requestData.length - 1];
+    const headers = new Map<string, string>(requestData.slice(1, -2).map((header) => {
+      const [key, value] = header.split(': ');
+      return [key, value];
+    }));
+
+    return {
+      method,
+      target,
+      version,
+      headers,
+      body
+    };
+  };
 
 }
-
-const parseRequest = (requestBuffer: Buffer): Request => {
-  const requestData = requestBuffer.toString().split('\r\n');
-  const [method, target, version] = requestData[0].split(' ');
-  const body = requestData[requestData.length - 1];
-  const headers = new Map<string, string>(requestData.slice(1, -2).map((header) => {
-    const [key, value] = header.split(': ');
-    return [key, value];
-  }));
-
-  return {
-    method,
-    target,
-    version,
-    params: {},
-    headers,
-    body
-  };
-};
