@@ -1,6 +1,6 @@
 import * as net from "node:net";
 import zlib from "node:zlib";
-import { HttpStatusMessages, type CompressionType, type HttpResponseHeaderName, type HttpResponseHeaderValueMap, type HttpStatusCode, type HttpVersion } from "./types";
+import { HttpStatusMessages, type CompressionType, type HttpResponseHeaderValueMap, type HttpStatusCode, type HttpVersion } from "./types";
 
 class HttpHeaders {
   #headers: { [key: string]: string; } = {};

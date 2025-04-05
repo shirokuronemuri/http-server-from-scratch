@@ -70,11 +70,3 @@ function isTargetMatch(requestTarget: string, endpointTarget: string) {
   const targetPattern = new RegExp(`^${endpointTarget.replace(/:(\w+)/g, "([^/]+)")}$`);
   return requestTarget.match(targetPattern);
 }
-
-interface RequestWithUnparsedParams {
-  method: string;
-  target: string;
-  version: string;
-  headers: Map<string, string>;
-  body: string;
-};

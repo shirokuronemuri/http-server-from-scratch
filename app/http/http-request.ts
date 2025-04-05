@@ -1,4 +1,4 @@
-import type { HttpMethod, ParamObject, Request } from "./types";
+import type { ParamObject, Request } from "./types";
 
 
 export class HttpRequest<ParamType> {

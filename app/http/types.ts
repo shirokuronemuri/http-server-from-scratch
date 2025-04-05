@@ -31,6 +31,6 @@ export interface Request {
 export type ParamObject<S extends String> =
   S extends `${infer _Start}:${infer Param}/${infer Rest}`
   ? { [K in Param | keyof ParamObject<`/${Rest}`>]: string }
-  : S extends `${infer Start}:${infer Param}`
+  : S extends `${infer _Start}:${infer Param}`
   ? { [K in Param]: string }
   : {};
