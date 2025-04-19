@@ -24,6 +24,11 @@ export class HttpServer {
       socket.on("data", async (requestBuffer) => {
         const parsedReq = HttpRequest.parseRequest(requestBuffer);
         const res = new HttpResponse(socket);
+        socket.setKeepAlive(true);
+        const isClosingConnection = parsedReq.headers.get('Connection') === 'close';
+        if (isClosingConnection) {
+          res.header('Connection', 'close');
+        }
         let endpointMatched = false;
         for (let endpoint of this.#endpoints) {
           if (parsedReq.method === endpoint.method && isTargetMatch(parsedReq.target, endpoint.target)) {
@@ -38,12 +43,8 @@ export class HttpServer {
         if (!endpointMatched) {
           res.status(404).send();
         }
-        const closeConnectionHeader = parsedReq.headers.get('Connection');
-        if (closeConnectionHeader === 'close') {
+        if (isClosingConnection) {
           socket.end();
-        }
-        else {
-          socket.setKeepAlive(true);
         }
       });
 

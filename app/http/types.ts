@@ -13,6 +13,7 @@ const HttpResponseHeaders = {
   "Content-Type": ['application/octet-stream', 'text/plain'],
   "Content-Length": [] as string[],
   "Content-Encoding": ['gzip'],
+  "Connection": ['close']
 } as const;
 export type CompressionType = typeof HttpResponseHeaders['Content-Encoding'][number];
 export type HttpResponseHeaderName = keyof typeof HttpResponseHeaders;
