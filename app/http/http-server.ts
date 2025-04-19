@@ -38,7 +38,13 @@ export class HttpServer {
         if (!endpointMatched) {
           res.status(404).send();
         }
-        socket.setKeepAlive(true);
+        const closeConnectionHeader = parsedReq.headers.get('Connection');
+        if (closeConnectionHeader === 'close') {
+          socket.end();
+        }
+        else {
+          socket.setKeepAlive(true);
+        }
       });
 
       socket.on("close", () => {
