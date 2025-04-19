@@ -90,7 +90,6 @@ export class HttpResponse {
     if (this.#response.body) {
       this.#socket.write(this.#response.body);
     }
-    this.#socket.end();
   }
 
 }

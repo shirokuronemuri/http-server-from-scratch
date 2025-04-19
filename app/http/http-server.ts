@@ -38,6 +38,7 @@ export class HttpServer {
         if (!endpointMatched) {
           res.status(404).send();
         }
+        socket.setKeepAlive(true);
       });
 
       socket.on("close", () => {
