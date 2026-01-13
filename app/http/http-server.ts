@@ -6,7 +6,10 @@ import { HttpResponse } from "./http-response";
 type Endpoint<Path extends string = string> = {
   method: HttpMethod;
   target: Path;
-  callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void | Promise<void>;
+  callback: (
+    req: HttpRequest<ParamObject<Path>>,
+    res: HttpResponse,
+  ) => void | Promise<void>;
 };
 
 export class HttpServer {
@@ -14,7 +17,7 @@ export class HttpServer {
   #hostname: string;
   #endpoints: Endpoint[] = [];
 
-  constructor(hostname: string = 'localhost', port: number = 4221) {
+  constructor(hostname: string = "localhost", port: number = 4221) {
     this.#port = port;
     this.#hostname = hostname;
   }
@@ -25,15 +28,22 @@ export class HttpServer {
         const parsedReq = HttpRequest.parseRequest(requestBuffer);
         const res = new HttpResponse(socket);
         socket.setKeepAlive(true);
-        const isClosingConnection = parsedReq.headers.get('Connection') === 'close';
+        const isClosingConnection =
+          parsedReq.headers.get("Connection") === "close";
         if (isClosingConnection) {
-          res.header('Connection', 'close');
+          res.header("Connection", "close");
         }
         let endpointMatched = false;
         for (let endpoint of this.#endpoints) {
-          if (parsedReq.method === endpoint.method && isTargetMatch(parsedReq.target, endpoint.target)) {
+          if (
+            parsedReq.method === endpoint.method &&
+            isTargetMatch(parsedReq.target, endpoint.target)
+          ) {
             endpointMatched = true;
-            const parsedParams = HttpRequest.parseParams(parsedReq.target, endpoint.target);
+            const parsedParams = HttpRequest.parseParams(
+              parsedReq.target,
+              endpoint.target,
+            );
             const req = new HttpRequest(parsedReq, parsedParams);
             await endpoint.callback.call(this, req, res);
             res.send();
@@ -53,28 +63,37 @@ export class HttpServer {
       });
     });
     server.listen(this.#port, this.#hostname);
+    console.log(`Server listening on port ${this.#port}`);
   }
 
-  get<Path extends string>(target: Path, callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void) {
+  get<Path extends string>(
+    target: Path,
+    callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void,
+  ) {
     const endpoint: Endpoint<Path> = {
-      method: 'GET',
+      method: "GET",
       target,
-      callback
+      callback,
     };
     this.#endpoints.push(endpoint);
   }
 
-  post<Path extends string>(target: Path, callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void) {
+  post<Path extends string>(
+    target: Path,
+    callback: (req: HttpRequest<ParamObject<Path>>, res: HttpResponse) => void,
+  ) {
     const endpoint: Endpoint<Path> = {
-      method: 'POST',
+      method: "POST",
       target,
-      callback
+      callback,
     };
     this.#endpoints.push(endpoint);
   }
 }
 
 function isTargetMatch(requestTarget: string, endpointTarget: string) {
-  const targetPattern = new RegExp(`^${endpointTarget.replace(/:(\w+)/g, "([^/]+)")}$`);
+  const targetPattern = new RegExp(
+    `^${endpointTarget.replace(/:(\w+)/g, "([^/]+)")}$`,
+  );
   return requestTarget.match(targetPattern);
 }
